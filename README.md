@@ -14,7 +14,7 @@ Single file source code for convenience.
 
 # Documentation
 
-Rust API documentation: [https://danpodeanu.github.io/udp-redirect-rs/udp_redirect_rs/](https://danpodeanu.github.io/udp-redirect-rs/udp_redirect_rs/)
+Rust API documentation: [https://danpodeanu.github.io/udp-redirect-rs/](https://danpodeanu.github.io/udp-redirect-rs/)
 
 ## Security
 
