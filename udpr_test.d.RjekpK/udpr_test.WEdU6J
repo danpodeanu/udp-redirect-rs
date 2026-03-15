@@ -1,0 +1,29 @@
+src/main.rs:814:1773545038:?(): ---- INFO ----
+src/main.rs:815:1773545038:?(): Listen address: ANY
+src/main.rs:817:1773545038:?(): Listen port: 19913
+src/main.rs:818:1773545038:?(): Listen interface: ANY
+src/main.rs:820:1773545038:?(): Connect address: 127.0.0.1
+src/main.rs:821:1773545038:?(): Connect port: 19914
+src/main.rs:822:1773545038:?(): Send address: ANY
+src/main.rs:827:1773545038:?(): Send port: ANY
+src/main.rs:829:1773545038:?(): Send interface: ANY
+src/main.rs:831:1773545038:?(): Listen strict: DISABLED
+src/main.rs:833:1773545038:?(): Connect strict: DISABLED
+src/main.rs:841:1773545038:?(): Ignore errors: ENABLED
+src/main.rs:843:1773545038:?(): Display stats: ENABLED
+src/main.rs:845:1773545038:?(): ---- START ----
+src/main.rs:315:1773545038:?(): Listen socket: bind to address ANY
+src/main.rs:319:1773545038:?(): Listen socket: bind to port 19913
+src/main.rs:324:1773545038:?(): Listen socket: create
+src/main.rs:407:1773545038:?(): Listen socket: bind to interface ANY
+src/main.rs:410:1773545038:?(): Listen socket: reuse local address
+src/main.rs:426:1773545038:?(): Listen socket: set nonblocking
+src/main.rs:433:1773545038:?(): Listen socket: bind
+src/main.rs:315:1773545038:?(): Send socket: bind to address ANY
+src/main.rs:321:1773545038:?(): Send socket: bind to port ANY
+src/main.rs:324:1773545038:?(): Send socket: create
+src/main.rs:407:1773545038:?(): Send socket: bind to interface ANY
+src/main.rs:410:1773545038:?(): Send socket: reuse local address
+src/main.rs:426:1773545038:?(): Send socket: set nonblocking
+src/main.rs:433:1773545038:?(): Send socket: bind
+src/main.rs:938:1773545038:?(): entering infinite loop

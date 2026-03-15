@@ -428,6 +428,22 @@ s.close()
         || fail "$LABEL: inet_pton: 255.255.255.255 no longer confused with INADDR_NONE"
     kill "$BC_PID" 2>/dev/null || true
 
+    # --- Send address family mismatch ---
+    echo "=== $LABEL: send address family mismatch ==="
+    "$BIN" --listen-port $P25 --connect-address 127.0.0.1 --connect-port $P26 \
+        --send-address ::1 2>/dev/null
+    [ $? -ne 0 ] \
+        && pass "$LABEL: IPv6 --send-address with IPv4 --connect-address rejected" \
+        || fail "$LABEL: IPv6 --send-address with IPv4 --connect-address rejected"
+
+    if python3 -c "import socket; s=socket.socket(socket.AF_INET6,socket.SOCK_DGRAM); s.bind(('::1',0)); s.close()" 2>/dev/null; then
+        "$BIN" --listen-port $P25 --connect-address ::1 --connect-port $P26 \
+            --send-address 127.0.0.1 2>/dev/null
+        [ $? -ne 0 ] \
+            && pass "$LABEL: IPv4 --send-address with IPv6 --connect-address rejected" \
+            || fail "$LABEL: IPv4 --send-address with IPv6 --connect-address rejected"
+    fi
+
     # --- IPv6 support ---
     if python3 -c "import socket; s=socket.socket(socket.AF_INET6,socket.SOCK_DGRAM); s.bind(('::1',0)); s.close()" 2>/dev/null; then
         echo "=== $LABEL: IPv6 support ==="
