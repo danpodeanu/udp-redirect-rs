@@ -1,2 +1,147 @@
 # udp-redirect-rs
-A simple yet flexible and very fast UDP redirector. IPv4 and IPv6, single file Rust.
+A simple yet flexible and very fast UDP redirector. Supports IPv4 and IPv6, including cross-family forwarding (IPv4 <-> IPv6). Tested on Linux x64 and MacOS / Darwin arm64.
+
+Useful for redirecting UDP traffic (e.g., Wireguard VPN, DNS, etc.) when doing it at a different layer (e.g., from a firewall) is difficult. Does not modify the redirected packets.
+
+Single file source code for convenience.
+
+![C CI](https://github.com/danpodeanu/udp-redirect-rs/actions/workflows/c-cpp.yml/badge.svg)
+![CodeQL](https://github.com/danpodeanu/udp-redirect-rs/actions/workflows/codeql.yml/badge.svg)
+![Docs](https://github.com/danpodeanu/udp-redirect-rs/actions/workflows/docs.yml/badge.svg)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+
+**Community contributions are welcome.**
+
+# Documentation
+
+Doxygen generated documentation: [https://danpodeanu.github.io/udp-redirect-rs/](https://danpodeanu.github.io/udp-redirect-rs/)
+
+## Security
+
+By default, the listener accepts packets from any source and forwards replies to the most recently seen source. This makes the process an unauthenticated UDP relay. If the listen port is reachable by untrusted networks, lock it down with `--listen-address-strict` and/or `--listen-sender-address` + `--listen-sender-port`, and consider firewalling the listen port to expected sources only.
+
+## Compile
+
+```# make```
+
+or
+
+```# gcc udp-redirect-rs.c -o udp-redirect-rs -Wall -O3```
+
+## Run
+
+```
+./udp-redirect-rs \
+    --listen-port 51821 \
+    --connect-host example.endpoint.net --connect-port 51822
+```
+
+```
+./udp-redirect-rs \
+    --debug \
+    --listen-address 192.168.1.32 --listen-port 51821 --listen-interface en0 \
+        --listen-address-strict \
+    --connect-host example.endpoint.net --connect-port 51822 \
+        --connect-address-strict \
+    --send-interface utun5 \
+    --listen-sender-address 192.168.1.1 --listen-sender-port 51820
+```
+
+Cross-family forwarding is supported: the listen and connect sockets use independent address families, determined by `--listen-address` and `--connect-address` respectively.
+
+Receive IPv4 packets and forward to an IPv6 backend:
+```
+./udp-redirect-rs \
+    --listen-address 0.0.0.0 --listen-port 51821 \
+    --connect-address ::1 --connect-port 51822
+```
+
+Receive IPv6 packets and forward to an IPv4 backend:
+```
+./udp-redirect-rs \
+    --listen-address ::1 --listen-port 51821 \
+    --connect-address 127.0.0.1 --connect-port 51822
+```
+
+```mermaid
+graph TD
+    A["--------------------<br/>Wireguard Client<br/>--------------------<br/>Send from:<br/>---------------<br/>IP: 192.168.1.1<br/>Port: 51820"] <--> B("--------------------<br/>UDP Redirector<br/>--------------------<br/>Receive on:<br/>---------------<br/>IP: 192.168.1.32 (--listen-address) (optional)<br/>Port: 51821 (--listen-port)<br/>Interface: en0 (--listen-interface) (optional)<br/>---------------<br/>Receive from: (optional)<br/>---------------<br/>IP: 192.168.1.1 (--listen-sender-address) (optional)<br/>Port: 51820 (--listen-sender-port) (optional)<br/>Only receive from Wireguard Client (--listen-address-strict) (optional)<br/>---------------<br/>Send to:<br/>---------------<br/>Host: example.endpoint.net (--connect-host)</br>Port: 51822 (--connect-port)<br/>Only receive from Wireguard Server (--connect-address-strict) (optional)<br/>---------------<br/>Send from:<br/>---------------<br/>Interface: utun5 (--sender-interface) (optional)<br/><br/>")
+    B <--> C["--------------------<br/>Wireguard Server<br/>--------------------<br/>Listen on:<br/>---------------<br/>Host: example.endpoint.net<br/>Port: 51822"]
+```
+
+Sample statistics output when invoked with ```--stats```:
+```
+---- STATS 60s ----
+listen:receive:packets: 7.5K (122.4 /s), listen:receive:bytes: 3.6M (59.4K/s)
+listen:send:packets: 12.8K (210.2 /s), listen:send:bytes: 13.8M (225.4K/s)
+connect:receive:packets: 12.8K (210.2 /s), connect:receive:bytes: 13.8M (225.4K/s)
+connect:send:packets: 7.5K (122.4 /s), connect:send:bytes: 3.6M (59.4K/s)
+---- STATS TOTAL ----
+listen:receive:packets: 45.8K (250.0 /s), listen:receive:bytes: 13.2M (72.4K/s)
+listen:send:packets: 98.3K (537.1 /s), listen:send:bytes: 122.9M (671.4K/s)
+connect:receive:packets: 98.3K (537.1 /s), connect:receive:bytes: 122.9M (671.4K/s)
+connect:send:packets: 45.8K (250.0 /s), connect:send:bytes: 13.2M (72.4K/s)
+```
+
+# Command Line Arguments
+
+```udp-redirect-rs [arguments]```
+
+Runs in foreground and expects external process control (svscan, nohup, etc.)
+
+## Debug
+
+| Argument | Parameters | Req/Opt | Description |
+| --- | --- | --- | --- |
+| ```--stats``` | | *optional* | Display sent/received bytes statistics every 60 seconds. |
+| ```--verbose``` | | *optional* | Verbose mode, can be specified multiple times. |
+| ```--debug``` | | *optional* | Debug mode (e.g., very verbose). |
+| ```--version``` | | *optional* | Display the version and exit. |
+
+## Listener
+
+The UDP sender (e.g., wireguard client) sends packets to the UDP redirector specified below.
+
+| Argument | Parameters | Req/Opt | Description |
+| --- | --- | --- | --- |
+| ```--listen-address``` | address | *optional* | Listen address (IPv4 or IPv6), defaults to INADDR_ANY / IN6ADDR_ANY. |
+| ```--listen-port``` | port | **required** | Listen port. |
+| ```--listen-interface``` | interface | *optional* | Listen interface name. |
+| ```--listen-address-strict``` | | *optional* | **Security:** By default, packets received from the connect endpoint will be sent to the source of the last packet received on the listener endpoint. In ```listen-address-strict``` mode, only accept packets from the same source as the first packet, or the source specified by ```listen-sender-address``` and ```listen-sender-port```. |
+
+## Connect
+
+The UDP redirector sends packets to the endpoint specified below.
+
+| Argument | Parameters | Req/Opt | Description |
+| --- | --- | --- | --- |
+| ```--connect-address``` | address | *optional if `--connect-host` is specified* | Connect address (IPv4 or IPv6). |
+| ```--connect-host``` | hostname | *optional if `--connect-address` is specified* | Connect host; overwrites `--connect-address` if both are specified. |
+| ```--connect-port``` | port | **required** | Connect port. |
+| ```--connect-address-strict``` | | *optional* | **Security**: Only accept packets from ```connect-host``` and ```connect-port```, otherwise accept from all sources. |
+
+# Sender
+
+The UDP redirector sends packets from the local endpoint specified below. If any arguments are missing, it will be selected by the operating system (usually INADDR_ANY, random port, default interface).
+
+| Argument | Parameters | Req/Opt | Description |
+| --- | --- | --- | --- |
+| ```--send-address``` | address | *optional* | Send packets from this address (IPv4 or IPv6). |
+| ```--send-port``` | port | *optional* | Send packets from this port. |
+| ```--send-interface``` | interface | *optional* | Send packets from this interface name. |
+
+# Listener security
+
+Both must be specified; listener drops packets if they do not arrive from this address / port.
+
+| Argument | Parameters | Req/Opt | Description |
+| --- | --- | --- | --- |
+| ```--listen-sender-address``` | address | *optional* | Listen endpoint only accepts packets from this source address (IPv4 or IPv6). |
+| ```--listen-sender-port``` | port | *optional* | Listen endpoint only accepts packets from this source port (must be set together, ```--listen-address-strict``` is implied). |
+
+# Miscellaneous
+
+| Argument | Parameters | Req/Opt | Description |
+| --- | --- | --- | --- |
+| ```--ignore-errors``` | | *optional* | Ignore most receive or send errors (host / network unreachable, etc.) instead of exiting. *(default)* |
+| ```--stop-errors``` | | *optional* | Stop on most receive or send errors (host / network unreachable, etc.) |
