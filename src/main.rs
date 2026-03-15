@@ -23,7 +23,7 @@ extern "C" {
 // Constants
 // ──────────────────────────────────────────────────────────────────────────
 
-const VERSION: &str = "2.2.0";
+const VERSION: &str = "1.0.0";
 const STATISTICS_DELAY_SECONDS: i64 = 60;
 const NETWORK_BUFFER_SIZE: usize = 65535;
 

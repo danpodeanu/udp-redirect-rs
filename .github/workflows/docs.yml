@@ -20,16 +20,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Doxygen
-      run: sudo apt-get install -y doxygen graphviz
-
     - name: Build docs
-      run: make docs
+      run: cargo doc --no-deps
 
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: docs
+        path: target/doc
 
   deploy:
     needs: build
